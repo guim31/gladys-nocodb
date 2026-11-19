@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-19
+
 ### Added
 
 - NocoDB tables in Gladys (self-hosted NocoDB or NocoDB Cloud, API token): one
@@ -22,3 +24,6 @@ the notes of the version's GitHub Release.
   in JSON or as `Field=value` pairs, and scene variables.
 - Dashboard widget "NocoDB tables", with a Refresh button that can be hidden.
 - Texts and documentation in English, French, German and Spanish.
+
+[Unreleased]: https://github.com/guim31/gladys-nocodb/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/guim31/gladys-nocodb/releases/tag/v1.0.0
