@@ -382,3 +382,11 @@ test('the row variable stays valid JSON when the row is long', () => {
   assert.equal(parsed.Done, 1);
   assert.ok(parsed.Title.length <= 80);
 });
+
+test('a redirection to https on the same host is followed, never to another host', async (t) => {
+  const w = await world(t);
+  w.noco.state.httpsRedirect = true;
+  await w.hub.pollAll();
+  assert.deepEqual(w.fake.connectionStatus, { connected: true });
+  assert.ok(w.noco.state.requests.some((request) => request.protocol === 'https:'));
+});

@@ -123,6 +123,10 @@ tablas al instante, se puede ocultar.
 ## Límites
 
 - Solo se leen las tablas seguidas, nunca una base entera.
+- Un campo número o sí/no seguido conserva su último valor cuando la vista se
+  vacía o la celda se vacía (Gladys no tiene estado «sin valor»).
+- Una redirección solo se sigue hacia el mismo host (http a https): escriba la
+  dirección final, p. ej. `https://app.nocodb.com`.
 - Una fila nueva es una fila cuyo identificador supera el último visto: una
   tabla de una base de datos externa cuya clave es un texto no activa «Nueva
   fila de NocoDB».

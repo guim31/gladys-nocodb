@@ -112,6 +112,10 @@ can be hidden.
 ## Limits
 
 - Only the tables you follow are read, never a whole base.
+- A number or yes/no field followed keeps its last value when the view becomes
+  empty or the cell is emptied (Gladys has no "no value" state).
+- A redirection is only followed on the same host (http to https): write the
+  final address, e.g. `https://app.nocodb.com`.
 - A new row is a row whose id is above the last one seen: a table of an
   external database whose key is a text does not fire "New NocoDB row".
 - At most 10 new rows per table are announced per reading; the next ones come

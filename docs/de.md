@@ -125,6 +125,11 @@ alle Tabellen sofort liest, lässt sich ausblenden.
 ## Grenzen
 
 - Nur die verfolgten Tabellen werden gelesen, nie eine ganze Base.
+- Ein verfolgtes Zahlen- oder Ja/Nein-Feld behält seinen letzten Wert, wenn die
+  Ansicht leer oder die Zelle geleert wird (Gladys hat keinen Zustand „ohne
+  Wert“).
+- Eine Weiterleitung wird nur zum selben Host verfolgt (http zu https): Schreib
+  die endgültige Adresse, z. B. `https://app.nocodb.com`.
 - Eine neue Zeile ist eine Zeile, deren ID über der zuletzt gesehenen liegt:
   Eine Tabelle einer externen Datenbank mit Text-Schlüssel löst „Neue
   NocoDB-Zeile“ nicht aus.

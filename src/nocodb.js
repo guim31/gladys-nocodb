@@ -118,18 +118,29 @@ export class NocoDbClient {
     if (auth) headers['xc-token'] = this.token;
     if (body !== undefined) headers['content-type'] = 'application/json';
     let response;
-    try {
-      response = await this.fetch(url, {
-        method,
-        headers,
-        body: body === undefined ? undefined : JSON.stringify(body),
-        signal: AbortSignal.timeout(this.timeoutMs),
-        // Never follow a redirection: undici would send the xc-token header to the
-        // new host too.
-        redirect: 'manual',
-      });
-    } catch (err) {
-      throw asNocoDbError(err);
+    let target = url;
+    // A redirection is followed by hand, and only on the same host name (an
+    // http address redirected to https, a missing slash): undici would send
+    // the xc-token header to any other host too.
+    for (let hops = 0; ; hops += 1) {
+      try {
+        response = await this.fetch(target, {
+          method,
+          headers,
+          body: body === undefined ? undefined : JSON.stringify(body),
+          signal: AbortSignal.timeout(this.timeoutMs),
+          redirect: 'manual',
+        });
+      } catch (err) {
+        throw asNocoDbError(err);
+      }
+      const location = response.headers?.get?.('location');
+      if (response.status < 300 || response.status >= 400 || !location || hops >= 2) break;
+      const next = new URL(location, target);
+      if (next.hostname !== target.hostname || !['http:', 'https:'].includes(next.protocol)) {
+        break;
+      }
+      target = next;
     }
     let text;
     try {

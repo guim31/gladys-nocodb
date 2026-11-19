@@ -127,6 +127,10 @@ tables aussitôt, peut être masqué.
 ## Limites
 
 - Seules les tables suivies sont lues, jamais une base entière.
+- Un champ nombre ou oui/non suivi garde sa dernière valeur quand la vue se
+  vide ou que la cellule est vidée (Gladys n'a pas d'état « sans valeur »).
+- Une redirection n'est suivie que vers le même hôte (http vers https) : écrivez
+  l'adresse finale, ex. `https://app.nocodb.com`.
 - Une nouvelle ligne est une ligne dont l'identifiant dépasse le dernier vu :
   une table d'une base externe dont la clé est un texte ne déclenche pas
   « Nouvelle ligne NocoDB ».

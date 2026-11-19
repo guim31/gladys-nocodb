@@ -120,7 +120,9 @@ export class NocoDbHub {
     this.readings = new Map();
     /** @type {Map<string, number>} last count read per follow (threshold) */
     this.lastCounts = new Map();
-    this.reading = false;
+    this.reading = 0;
+    /** @type {Map<string, number>} refused "New NocoDB row" events, per row */
+    this.eventTries = new Map();
     /** @type {Map<string, Set<string>>} rows added by the scene actions, per table */
     this.ownRows = new Map();
     this.serverError = null;
@@ -183,7 +185,7 @@ export class NocoDbHub {
     this.timer = setInterval(() => {
       // A read still running (a slow server, many tables): skip this tick
       // rather than pile reads up in front of the scene actions.
-      if (this.reading) return;
+      if (this.reading > 0) return;
       this.pollAll().catch((err) => this.failures.fail('loop', `Reading loop: ${err.message}`));
     }, this.config.pollIntervalMs);
     this.timer.unref?.();
@@ -249,11 +251,11 @@ export class NocoDbHub {
 
   /** Reads every table followed, publishes what changed. */
   pollAll() {
-    this.reading = true;
+    this.reading += 1;
     const run = this.exclusive(() => this.readAll());
     run
       .finally(() => {
-        this.reading = false;
+        this.reading -= 1;
       })
       .catch(() => {});
     return run;
@@ -384,8 +386,15 @@ export class NocoDbHub {
             title === null || title === undefined ? '' : String(title).slice(0, MAX_EVENT_TEXT),
           row: rowJson(row),
         });
-        // Refused by Gladys (restarting, 429): announced again at the next read.
-        if (!sent) break;
+        // Refused by Gladys (restarting, 429): announced again at the next
+        // read, three times at most (a row Gladys never accepts would block
+        // the table).
+        if (!sent) {
+          const tries = (this.eventTries.get(`${spec.id}:${id}`) ?? 0) + 1;
+          this.eventTries.set(`${spec.id}:${id}`, tries);
+          if (tries < 3) break;
+        }
+        this.eventTries.delete(`${spec.id}:${id}`);
       }
       spec.lastId = Math.max(spec.lastId, id);
     }

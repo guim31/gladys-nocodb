@@ -29,6 +29,7 @@ export function createFakeNocoDb() {
     html: false,
     status: 0,
     wrongPath: false,
+    httpsRedirect: false,
     requests: [],
     tables: new Map([
       [
@@ -76,6 +77,7 @@ export function createFakeNocoDb() {
     const url = new URL(input);
     const method = init.method ?? 'GET';
     state.requests.push({
+      protocol: url.protocol,
       method,
       path: url.pathname,
       query: Object.fromEntries(url.searchParams),
@@ -85,6 +87,12 @@ export function createFakeNocoDb() {
     }
     if (state.slow) {
       throw new DOMException('The operation was aborted due to timeout', 'TimeoutError');
+    }
+    if (state.httpsRedirect && url.protocol === 'http:') {
+      return new Response('', {
+        status: 301,
+        headers: { location: url.href.replace('http:', 'https:') },
+      });
     }
     if (state.status) {
       // A proxy in front of a NocoDB that is down (502), a crash (500), a redirection.
