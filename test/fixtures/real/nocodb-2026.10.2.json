@@ -1,0 +1,334 @@
+{
+  "version": {
+    "currentVersion": "2026.10.2",
+    "releaseVersion": "2026.10.2"
+  },
+  "bases": {
+    "list": [
+      {
+        "is_meta": 1,
+        "id": "pb29maq6qjjrel2",
+        "title": "Getting Started",
+        "prefix": "nc_f1y3__",
+        "status": null,
+        "description": null,
+        "meta": {
+          "iconColor": "#36BFFF"
+        },
+        "color": null,
+        "uuid": null,
+        "roles": null,
+        "deleted": 0,
+        "order": 1,
+        "type": "database",
+        "fk_workspace_id": "wts3q8sa",
+        "is_snapshot": 0,
+        "fk_custom_url_id": null,
+        "version": 2,
+        "default_role": null,
+        "created_at": "2026-11-19 20:51:56.406+00:00",
+        "updated_at": "2026-11-19 20:51:56.406+00:00",
+        "managed_app_master": 0,
+        "managed_app_id": null,
+        "managed_app_version_id": null,
+        "auto_update": 1,
+        "is_sandbox_production": 0,
+        "is_sandbox": 0,
+        "suspended": 0,
+        "suspended_reason": null,
+        "suspended_at": null,
+        "suspended_by": null,
+        "is_lane_instance": 0,
+        "has_lane_instances": 0,
+        "managed_app_surface": null
+      },
+      {
+        "is_meta": 1,
+        "id": "phl2iga24lsjrc8",
+        "title": "Home",
+        "prefix": "nc_8rbd__",
+        "status": null,
+        "description": null,
+        "meta": {
+          "iconColor": "#36BFFF"
+        },
+        "color": null,
+        "uuid": null,
+        "roles": null,
+        "deleted": 0,
+        "order": 2,
+        "type": "database",
+        "fk_workspace_id": "wts3q8sa",
+        "is_snapshot": 0,
+        "fk_custom_url_id": null,
+        "version": 2,
+        "default_role": null,
+        "created_at": "2026-11-19 20:52:01.975+00:00",
+        "updated_at": "2026-11-19 20:52:01.975+00:00",
+        "managed_app_master": 0,
+        "managed_app_id": null,
+        "managed_app_version_id": null,
+        "auto_update": 1,
+        "is_sandbox_production": 0,
+        "is_sandbox": 0,
+        "suspended": 0,
+        "suspended_reason": null,
+        "suspended_at": null,
+        "suspended_by": null,
+        "is_lane_instance": 0,
+        "has_lane_instances": 0,
+        "managed_app_surface": null
+      }
+    ],
+    "pageInfo": {
+      "totalRows": 2,
+      "page": 1,
+      "pageSize": 2,
+      "isFirstPage": true,
+      "isLastPage": true
+    }
+  },
+  "tables": {
+    "list": [
+      {
+        "id": "mh0km3de23ehvdx",
+        "source_id": "bvvflrp7tmdlmih",
+        "base_id": "phl2iga24lsjrc8",
+        "table_name": "nc_8rbd___tasks",
+        "title": "Tasks",
+        "type": "table",
+        "meta": null,
+        "schema": null,
+        "enabled": 1,
+        "mm": 0,
+        "tags": null,
+        "pinned": null,
+        "deleted": null,
+        "order": 1,
+        "description": null,
+        "synced": 0,
+        "fk_workspace_id": "wts3q8sa",
+        "created_by": null,
+        "owned_by": null,
+        "uuid": null,
+        "password": null,
+        "fk_custom_url_id": null,
+        "created_at": "2026-11-19 20:52:08.052+00:00",
+        "updated_at": "2026-11-19 20:52:08.052+00:00",
+        "parent_id": null,
+        "updated_by": null,
+        "has_children": 0,
+        "doc_version": 1,
+        "trash_disabled": null,
+        "trash_retention_days": null,
+        "fk_base_section_id": null
+      }
+    ]
+  },
+  "table": {
+    "id": "mh0km3de23ehvdx",
+    "base_id": "phl2iga24lsjrc8",
+    "title": "Tasks",
+    "table_name": "nc_8rbd___tasks",
+    "type": "table",
+    "columns": [
+      {
+        "id": "cufrwuil9vx3lbv",
+        "title": "Id",
+        "column_name": "id",
+        "uidt": "ID",
+        "dt": "integer",
+        "pk": 1,
+        "pv": null,
+        "ai": 1,
+        "system": 0,
+        "rqd": 1
+      },
+      {
+        "id": "cfzekkwmass31o7",
+        "title": "CreatedAt",
+        "column_name": "created_at",
+        "uidt": "CreatedTime",
+        "dt": "datetime",
+        "pk": 0,
+        "pv": null,
+        "ai": 0,
+        "system": 1,
+        "rqd": 0
+      },
+      {
+        "id": "cdeb3omgnd7scec",
+        "title": "UpdatedAt",
+        "column_name": "updated_at",
+        "uidt": "LastModifiedTime",
+        "dt": "datetime",
+        "pk": 0,
+        "pv": null,
+        "ai": 0,
+        "system": 1,
+        "rqd": 0
+      },
+      {
+        "id": "c7r48khom69nhag",
+        "title": "nc_created_by",
+        "column_name": "created_by",
+        "uidt": "CreatedBy",
+        "dt": "varchar",
+        "pk": 0,
+        "pv": null,
+        "ai": 0,
+        "system": 1,
+        "rqd": 0
+      },
+      {
+        "id": "cm1eupsrfvg7r3c",
+        "title": "nc_updated_by",
+        "column_name": "updated_by",
+        "uidt": "LastModifiedBy",
+        "dt": "varchar",
+        "pk": 0,
+        "pv": null,
+        "ai": 0,
+        "system": 1,
+        "rqd": 0
+      },
+      {
+        "id": "c77cmk5nqda1h1t",
+        "title": "nc_order",
+        "column_name": "nc_order",
+        "uidt": "Order",
+        "dt": "real",
+        "pk": 0,
+        "pv": null,
+        "ai": 0,
+        "system": 1,
+        "rqd": 0
+      },
+      {
+        "id": "cf3nxfwtjs0g0z3",
+        "title": "__nc_deleted",
+        "column_name": "__nc_deleted",
+        "uidt": "Deleted",
+        "dt": "boolean",
+        "pk": 0,
+        "pv": null,
+        "ai": 0,
+        "system": 1,
+        "rqd": 0
+      },
+      {
+        "id": "cf4ypyt8p8a4z2m",
+        "title": "Title",
+        "column_name": "title",
+        "uidt": "SingleLineText",
+        "dt": "varchar",
+        "pk": 0,
+        "pv": 1,
+        "ai": 0,
+        "system": null,
+        "rqd": 0
+      },
+      {
+        "id": "cn21fwsc3gdrtt9",
+        "title": "Done",
+        "column_name": "done",
+        "uidt": "Checkbox",
+        "dt": "boolean",
+        "pk": 0,
+        "pv": null,
+        "ai": 0,
+        "system": null,
+        "rqd": 0
+      },
+      {
+        "id": "ci66tsx7yr3m0wr",
+        "title": "Amount",
+        "column_name": "amount",
+        "uidt": "Number",
+        "dt": "integer",
+        "pk": 0,
+        "pv": null,
+        "ai": 0,
+        "system": null,
+        "rqd": 0
+      }
+    ],
+    "views": [
+      {
+        "id": "vw8jtg9gbs5kd2lw",
+        "title": "Tasks",
+        "type": 3,
+        "fk_model_id": "mh0km3de23ehvdx",
+        "is_default": null
+      },
+      {
+        "id": "vw3q3ak4p024t5sw",
+        "title": "Todo",
+        "type": 3,
+        "fk_model_id": "mh0km3de23ehvdx",
+        "is_default": null
+      }
+    ]
+  },
+  "records": {
+    "list": [
+      {
+        "Id": 1,
+        "CreatedAt": "2026-11-19 20:52:19.620+00:00",
+        "UpdatedAt": "2026-11-19 20:59:16.130+00:00",
+        "Title": "Buy milk",
+        "Done": 1,
+        "Amount": 3
+      },
+      {
+        "Id": 2,
+        "CreatedAt": "2026-11-19 20:52:20.203+00:00",
+        "UpdatedAt": null,
+        "Title": "Water plants",
+        "Done": 1,
+        "Amount": null
+      },
+      {
+        "Id": 3,
+        "CreatedAt": "2026-11-19 20:52:20.207+00:00",
+        "UpdatedAt": null,
+        "Title": "Fix door",
+        "Done": 0,
+        "Amount": null
+      }
+    ],
+    "pageInfo": {
+      "totalRows": 9,
+      "page": 1,
+      "pageSize": 3,
+      "isFirstPage": true,
+      "isLastPage": false
+    }
+  },
+  "count": {
+    "count": 9
+  },
+  "errors": {
+    "badToken": {
+      "status": 401,
+      "body": {
+        "error": "ERR_AUTHENTICATION_REQUIRED",
+        "message": "Authentication required - Invalid token"
+      }
+    },
+    "tableNotFound": {
+      "status": 404,
+      "body": {
+        "error": "ERR_TABLE_NOT_FOUND",
+        "message": "Table 'mzzzzzzzzzzzzzz' not found"
+      }
+    },
+    "viewNotFound": {
+      "status": 404,
+      "body": {
+        "error": "ERR_VIEW_NOT_FOUND",
+        "message": "View 'vwnope' not found"
+      }
+    }
+  }
+}

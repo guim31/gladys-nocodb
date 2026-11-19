@@ -30,6 +30,13 @@ Gladys before reporting a problem.
 
 In scope: the code of this repository and the Docker image it publishes.
 
+The integration stores under `/data` (its only writable volume) the list of the
+NocoDB tables followed (ids, names, the last row id seen), never a row of data.
+The NocoDB address and API token live in the Gladys configuration, are sent to
+NocoDB only (header `xc-token`) and are never logged. The container only talks
+to the NocoDB address configured, and to Gladys.
+
 Out of scope: Gladys Assistant itself (see its
 [security policy](https://github.com/GladysAssistant/Gladys/security/policy)),
-and the third-party services and devices the integration talks to.
+and NocoDB itself (see its
+[security policy](https://github.com/nocodb/nocodb/security/policy)).

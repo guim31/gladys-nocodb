@@ -1,177 +1,776 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "NocoDB",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "Your NocoDB tables in Gladys: row counts, new rows, and rows added from your scenes.",
+    "fr": "Vos tables NocoDB dans Gladys : nombre de lignes, nouvelles lignes, ajouts depuis les scènes.",
+    "de": "Deine NocoDB-Tabellen in Gladys: Zeilenzahl, neue Zeilen und Zeilen aus deinen Szenen.",
+    "es": "Sus tablas de NocoDB en Gladys: número de filas, filas nuevas y filas añadidas desde escenas."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
+  "docker_image": "ghcr.io/guim31/gladys-nocodb:1.0.0",
   "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
-  "transports": ["local", "cloud"],
+  "cover_image": "https://raw.githubusercontent.com/guim31/gladys-nocodb/main/cover.png",
+  "categories": ["services", "servers"],
+  "transports": ["local"],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": {
+        "en": "Your NocoDB",
+        "fr": "Votre NocoDB",
+        "de": "Dein NocoDB",
+        "es": "Su NocoDB"
+      },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "Self-hosted NocoDB, or NocoDB Cloud. Enter its address and an API token, then follow your tables with \"Follow a table\" below, and add their devices from the Discover tab.",
+        "fr": "NocoDB auto-hébergé, ou NocoDB Cloud. Saisissez son adresse et un jeton d'API, puis suivez vos tables avec « Suivre une table » ci-dessous, et ajoutez leurs appareils depuis l'onglet Découverte.",
+        "de": "Selbst gehostetes NocoDB oder NocoDB Cloud. Gib seine Adresse und ein API-Token ein, verfolge dann deine Tabellen mit „Tabelle verfolgen“ unten und füge ihre Geräte im Tab „Entdecken“ hinzu.",
+        "es": "NocoDB autoalojado, o NocoDB Cloud. Introduzca su dirección y un token de API, después siga sus tablas con «Seguir una tabla» más abajo, y añada sus dispositivos desde la pestaña Descubrir."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://github.com/guim31/gladys-nocodb/blob/main/docs/en.md",
+          "label": {
+            "en": "Setup guide",
+            "fr": "Guide d'installation",
+            "de": "Installationsanleitung",
+            "es": "Guía de instalación"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
-      },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
+      "key": "url",
+      "type": "string",
       "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
+      "label": {
+        "en": "Address",
+        "fr": "Adresse",
+        "de": "Adresse",
+        "es": "Dirección"
+      },
+      "description": {
+        "en": "Address of NocoDB as seen from Gladys (not localhost), with its port.",
+        "fr": "Adresse de NocoDB vue depuis Gladys (pas localhost), avec son port.",
+        "de": "Adresse von NocoDB, von Gladys aus gesehen (nicht localhost), mit Port.",
+        "es": "Dirección de NocoDB vista desde Gladys (no localhost), con su puerto."
+      },
+      "placeholder": {
+        "en": "e.g. http://192.168.1.20:8080",
+        "fr": "ex. http://192.168.1.20:8080",
+        "de": "z. B. http://192.168.1.20:8080",
+        "es": "p. ej. http://192.168.1.20:8080"
+      }
     },
     {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
-      },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
+      "key": "api_token",
+      "type": "secret",
       "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
+      "label": {
+        "en": "API token",
+        "fr": "Jeton d'API",
+        "de": "API-Token",
+        "es": "Token de API"
+      },
+      "description": {
+        "en": "Account settings → Tokens in NocoDB. It has the rights of its user.",
+        "fr": "Paramètres du compte → Tokens dans NocoDB. Il a les droits de son utilisateur.",
+        "de": "Kontoeinstellungen → Tokens in NocoDB. Es hat die Rechte seines Benutzers.",
+        "es": "Ajustes de la cuenta → Tokens en NocoDB. Tiene los permisos de su usuario."
+      }
     },
     {
-      "key": "unit",
+      "key": "poll_interval",
       "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
       "required": false,
-      "default": "celsius",
+      "default": "60",
       "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
-      ]
+        {
+          "value": "30",
+          "label": {
+            "en": "30 seconds",
+            "fr": "30 secondes",
+            "de": "30 Sekunden",
+            "es": "30 segundos"
+          }
+        },
+        {
+          "value": "60",
+          "label": {
+            "en": "1 minute",
+            "fr": "1 minute",
+            "de": "1 Minute",
+            "es": "1 minuto"
+          }
+        },
+        {
+          "value": "300",
+          "label": {
+            "en": "5 minutes",
+            "fr": "5 minutes",
+            "de": "5 Minuten",
+            "es": "5 minutos"
+          }
+        },
+        {
+          "value": "900",
+          "label": {
+            "en": "15 minutes",
+            "fr": "15 minutes",
+            "de": "15 Minuten",
+            "es": "15 minutos"
+          }
+        }
+      ],
+      "label": {
+        "en": "Refresh interval",
+        "fr": "Intervalle de rafraîchissement",
+        "de": "Aktualisierungsintervall",
+        "es": "Intervalo de actualización"
+      },
+      "description": {
+        "en": "How often the tables are read: two or three requests per table.",
+        "fr": "Fréquence de lecture des tables : deux ou trois requêtes par table.",
+        "de": "Wie oft die Tabellen gelesen werden: zwei oder drei Anfragen pro Tabelle.",
+        "es": "Con qué frecuencia se leen las tablas: dos o tres solicitudes por tabla."
+      }
     },
     {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
-      "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
-      },
+      "key": "language",
+      "type": "select",
       "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
+      "default": "fr",
+      "options": [
+        {
+          "value": "en",
+          "label": {
+            "en": "English",
+            "fr": "Anglais",
+            "de": "Englisch",
+            "es": "Inglés"
+          }
+        },
+        {
+          "value": "fr",
+          "label": {
+            "en": "French",
+            "fr": "Français",
+            "de": "Französisch",
+            "es": "Francés"
+          }
+        },
+        {
+          "value": "de",
+          "label": {
+            "en": "German",
+            "fr": "Allemand",
+            "de": "Deutsch",
+            "es": "Alemán"
+          }
+        },
+        {
+          "value": "es",
+          "label": {
+            "en": "Spanish",
+            "fr": "Espagnol",
+            "de": "Spanisch",
+            "es": "Español"
+          }
+        }
+      ],
+      "label": {
+        "en": "Language of the messages",
+        "fr": "Langue des messages",
+        "de": "Sprache der Meldungen",
+        "es": "Idioma de los mensajes"
+      },
+      "description": {
+        "en": "Names of the new features (frozen once added).",
+        "fr": "Noms des nouvelles fonctionnalités (figés une fois ajoutées).",
+        "de": "Namen der neuen Funktionen (nach dem Hinzufügen fest).",
+        "es": "Nombres de las nuevas funciones (fijos una vez añadidas)."
+      }
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
-      "timeout_seconds": 30
+      "key": "test_connection",
+      "label": {
+        "en": "Test the connection",
+        "fr": "Tester la connexion",
+        "de": "Verbindung testen",
+        "es": "Probar la conexión"
+      },
+      "description": {
+        "en": "Lists the tables the token sees, reads the tables followed and says what is wrong.",
+        "fr": "Liste les tables que voit le jeton, lit les tables suivies et dit ce qui ne va pas.",
+        "de": "Listet die Tabellen, die das Token sieht, liest die verfolgten Tabellen und sagt, was nicht stimmt.",
+        "es": "Enumera las tablas que ve el token, lee las tablas seguidas e indica lo que falla."
+      },
+      "timeout_seconds": 60
     },
     {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
+      "key": "follow_table",
+      "label": {
+        "en": "Follow a table",
+        "fr": "Suivre une table",
+        "de": "Tabelle verfolgen",
+        "es": "Seguir una tabla"
+      },
+      "description": {
+        "en": "One device per table (and view, field). The same again changes its name or threshold.",
+        "fr": "Un appareil par table (et vue, champ). La même de nouveau change son nom ou son seuil.",
+        "de": "Ein Gerät pro Tabelle (und Ansicht, Feld). Dieselbe erneut ändert Namen oder Schwelle.",
+        "es": "Un dispositivo por tabla (y vista, campo). La misma de nuevo cambia su nombre o umbral."
+      },
+      "timeout_seconds": 60,
       "fields": [
         {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
+          "key": "table",
+          "type": "string",
+          "required": false,
+          "label": {
+            "en": "Table",
+            "fr": "Table",
+            "de": "Tabelle",
+            "es": "Tabla"
+          },
+          "description": {
+            "en": "Its name, \"Base / Table\" if several bases have it, or its id.",
+            "fr": "Son nom, « Base / Table » si plusieurs bases l'ont, ou son identifiant.",
+            "de": "Der Tabellenname, „Base / Tabelle“, falls mehrere Bases ihn haben, oder die Tabellen-ID.",
+            "es": "Su nombre, «Base / Tabla» si varias bases la tienen, o su identificador."
+          },
+          "placeholder": {
+            "en": "e.g. Home / Tasks",
+            "fr": "ex. Maison / Tâches",
+            "de": "z. B. Zuhause / Aufgaben",
+            "es": "p. ej. Casa / Tareas"
+          }
+        },
+        {
+          "key": "view",
+          "type": "string",
+          "required": false,
+          "label": {
+            "en": "View (optional)",
+            "fr": "Vue (facultative)",
+            "de": "Ansicht (optional)",
+            "es": "Vista (opcional)"
+          },
+          "description": {
+            "en": "Counts only the rows of this view: its filters, its sort.",
+            "fr": "Ne compte que les lignes de cette vue : ses filtres, son tri.",
+            "de": "Zählt nur die Zeilen dieser Ansicht: ihre Filter, ihre Sortierung.",
+            "es": "Solo cuenta las filas de esta vista: sus filtros, su orden."
+          },
+          "placeholder": {
+            "en": "e.g. To do",
+            "fr": "ex. À faire",
+            "de": "z. B. Offen",
+            "es": "p. ej. Pendientes"
+          }
+        },
+        {
+          "key": "field",
+          "type": "string",
+          "required": false,
+          "label": {
+            "en": "Field (optional)",
+            "fr": "Champ (facultatif)",
+            "de": "Feld (optional)",
+            "es": "Campo (opcional)"
+          },
+          "description": {
+            "en": "Also shows this field of the first row of the view.",
+            "fr": "Affiche aussi ce champ de la première ligne de la vue.",
+            "de": "Zeigt auch dieses Feld der ersten Zeile der Ansicht.",
+            "es": "Muestra también este campo de la primera fila de la vista."
+          },
+          "placeholder": {
+            "en": "e.g. Title",
+            "fr": "ex. Titre",
+            "de": "z. B. Titel",
+            "es": "p. ej. Título"
+          }
+        },
+        {
+          "key": "threshold",
+          "type": "string",
+          "required": false,
+          "label": {
+            "en": "Threshold (optional)",
+            "fr": "Seuil (facultatif)",
+            "de": "Schwellenwert (optional)",
+            "es": "Umbral (opcional)"
+          },
+          "description": {
+            "en": "A number of rows: \"NocoDB rows above a threshold\" fires when the count goes above it.",
+            "fr": "Un nombre de lignes : « Lignes NocoDB au-dessus d'un seuil » se déclenche quand le compte le dépasse.",
+            "de": "Eine Zeilenzahl: „NocoDB-Zeilen über einer Schwelle“ löst aus, wenn die Zahl sie übersteigt.",
+            "es": "Un número de filas: «Filas de NocoDB por encima de un umbral» se activa cuando el número lo supera."
+          },
+          "placeholder": {
+            "en": "e.g. 10",
+            "fr": "ex. 10",
+            "de": "z. B. 10",
+            "es": "p. ej. 10"
+          }
+        },
+        {
+          "key": "name",
+          "type": "string",
+          "required": false,
+          "label": {
+            "en": "Name (optional)",
+            "fr": "Nom (facultatif)",
+            "de": "Name (optional)",
+            "es": "Nombre (opcional)"
+          },
+          "placeholder": {
+            "en": "e.g. Tasks to do",
+            "fr": "ex. Tâches à faire",
+            "de": "z. B. Offene Aufgaben",
+            "es": "p. ej. Tareas pendientes"
+          }
+        }
+      ]
+    },
+    {
+      "key": "unfollow_table",
+      "label": {
+        "en": "Stop following a table",
+        "fr": "Ne plus suivre une table",
+        "de": "Tabelle nicht mehr verfolgen",
+        "es": "Dejar de seguir una tabla"
+      },
+      "description": {
+        "en": "Its device stays in Gladys until you delete it.",
+        "fr": "Son appareil reste dans Gladys jusqu'à sa suppression.",
+        "de": "Sein Gerät bleibt in Gladys, bis du es löschst.",
+        "es": "Su dispositivo queda en Gladys hasta que lo elimine."
+      },
+      "timeout_seconds": 30,
+      "fields": [
+        {
+          "key": "table",
+          "type": "string",
+          "required": false,
+          "label": {
+            "en": "Table",
+            "fr": "Table",
+            "de": "Tabelle",
+            "es": "Tabla"
+          },
+          "description": {
+            "en": "Its name, \"Base / Table\" if several bases have it, or its id.",
+            "fr": "Son nom, « Base / Table » si plusieurs bases l'ont, ou son identifiant.",
+            "de": "Der Tabellenname, „Base / Tabelle“, falls mehrere Bases ihn haben, oder die Tabellen-ID.",
+            "es": "Su nombre, «Base / Tabla» si varias bases la tienen, o su identificador."
+          },
+          "placeholder": {
+            "en": "e.g. Home / Tasks",
+            "fr": "ex. Maison / Tâches",
+            "de": "z. B. Zuhause / Aufgaben",
+            "es": "p. ej. Casa / Tareas"
+          }
+        },
+        {
+          "key": "view",
+          "type": "string",
+          "required": false,
+          "label": {
+            "en": "View (optional)",
+            "fr": "Vue (facultative)",
+            "de": "Ansicht (optional)",
+            "es": "Vista (opcional)"
+          },
+          "description": {
+            "en": "Counts only the rows of this view: its filters, its sort.",
+            "fr": "Ne compte que les lignes de cette vue : ses filtres, son tri.",
+            "de": "Zählt nur die Zeilen dieser Ansicht: ihre Filter, ihre Sortierung.",
+            "es": "Solo cuenta las filas de esta vista: sus filtros, su orden."
+          },
+          "placeholder": {
+            "en": "e.g. To do",
+            "fr": "ex. À faire",
+            "de": "z. B. Offen",
+            "es": "p. ej. Pendientes"
+          }
+        },
+        {
+          "key": "field",
+          "type": "string",
+          "required": false,
+          "label": {
+            "en": "Field (optional)",
+            "fr": "Champ (facultatif)",
+            "de": "Feld (optional)",
+            "es": "Campo (opcional)"
+          },
+          "description": {
+            "en": "Also shows this field of the first row of the view.",
+            "fr": "Affiche aussi ce champ de la première ligne de la vue.",
+            "de": "Zeigt auch dieses Feld der ersten Zeile der Ansicht.",
+            "es": "Muestra también este campo de la primera fila de la vista."
+          },
+          "placeholder": {
+            "en": "e.g. Title",
+            "fr": "ex. Titre",
+            "de": "z. B. Titel",
+            "es": "p. ej. Título"
+          }
         }
       ]
     }
   ],
   "scene_triggers": [
     {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
+      "key": "new_row",
+      "label": {
+        "en": "New NocoDB row",
+        "fr": "Nouvelle ligne NocoDB",
+        "de": "Neue NocoDB-Zeile",
+        "es": "Nueva fila de NocoDB"
+      },
       "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+        "en": "A row added to a table followed (to its view, if any), by anyone but this integration.",
+        "fr": "Une ligne ajoutée à une table suivie (à sa vue, s'il y en a une), par un autre que cette intégration.",
+        "de": "Eine Zeile, die einer verfolgten Tabelle (ihrer Ansicht, falls vorhanden) hinzugefügt wurde, nicht von dieser Integration.",
+        "es": "Una fila añadida a una tabla seguida (a su vista, si la hay), por otro que no sea esta integración."
       },
       "fields": [
         {
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
-        },
-        {
-          "key": "target",
-          "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
-          "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
-          ]
+          "required": false,
+          "label": {
+            "en": "Table (empty: any)",
+            "fr": "Table (vide : toutes)",
+            "de": "Tabelle (leer: alle)",
+            "es": "Tabla (vacío: todas)"
+          }
         }
       ],
       "variables": [
         {
-          "key": "target",
+          "key": "table",
           "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
+          "label": {
+            "en": "Table",
+            "fr": "Table",
+            "de": "Tabelle",
+            "es": "Tabla"
+          }
+        },
+        {
+          "key": "id",
+          "type": "string",
+          "label": {
+            "en": "Row id",
+            "fr": "Identifiant de la ligne",
+            "de": "Zeilen-ID",
+            "es": "Identificador de la fila"
+          }
+        },
+        {
+          "key": "title",
+          "type": "string",
+          "label": {
+            "en": "Display value",
+            "fr": "Valeur affichée",
+            "de": "Anzeigewert",
+            "es": "Valor mostrado"
+          }
+        },
+        {
+          "key": "row",
+          "type": "string",
+          "label": {
+            "en": "Row (JSON)",
+            "fr": "Ligne (JSON)",
+            "de": "Zeile (JSON)",
+            "es": "Fila (JSON)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "count_above",
+      "label": {
+        "en": "NocoDB rows above a threshold",
+        "fr": "Lignes NocoDB au-dessus d'un seuil",
+        "de": "NocoDB-Zeilen über einer Schwelle",
+        "es": "Filas de NocoDB por encima de un umbral"
+      },
+      "description": {
+        "en": "The row count goes above the threshold set with \"Follow a table\". Once per crossing.",
+        "fr": "Le nombre de lignes dépasse le seuil réglé avec « Suivre une table ». Une fois par franchissement.",
+        "de": "Die Zeilenzahl übersteigt die mit „Tabelle verfolgen“ gesetzte Schwelle. Einmal pro Überschreitung.",
+        "es": "El número de filas supera el umbral fijado con «Seguir una tabla». Una vez por cruce."
+      },
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "required": false,
+          "label": {
+            "en": "Table (empty: any)",
+            "fr": "Table (vide : toutes)",
+            "de": "Tabelle (leer: alle)",
+            "es": "Tabla (vacío: todas)"
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "table",
+          "type": "string",
+          "label": {
+            "en": "Table",
+            "fr": "Table",
+            "de": "Tabelle",
+            "es": "Tabla"
+          }
+        },
+        {
+          "key": "count",
+          "type": "number",
+          "label": {
+            "en": "Rows",
+            "fr": "Lignes",
+            "de": "Zeilen",
+            "es": "Filas"
+          }
+        },
+        {
+          "key": "threshold",
+          "type": "number",
+          "label": {
+            "en": "Threshold",
+            "fr": "Seuil",
+            "de": "Schwellenwert",
+            "es": "Umbral"
+          }
         }
       ]
     }
   ],
   "scene_actions": [
     {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
+      "key": "add_row",
+      "label": {
+        "en": "Add a NocoDB row",
+        "fr": "Ajouter une ligne NocoDB",
+        "de": "NocoDB-Zeile hinzufügen",
+        "es": "Añadir una fila de NocoDB"
       },
-      "timeout_seconds": 15,
+      "description": {
+        "en": "Adds a row to a table followed.",
+        "fr": "Ajoute une ligne à une table suivie.",
+        "de": "Fügt einer verfolgten Tabelle eine Zeile hinzu.",
+        "es": "Añade una fila a una tabla seguida."
+      },
+      "timeout_seconds": 30,
       "fields": [
         {
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
+          "required": true,
+          "label": {
+            "en": "Table",
+            "fr": "Table",
+            "de": "Tabelle",
+            "es": "Tabla"
+          },
+          "description": {
+            "en": "A NocoDB table device added to Gladys.",
+            "fr": "Un appareil table NocoDB ajouté à Gladys.",
+            "de": "Ein in Gladys angelegtes NocoDB-Tabellengerät.",
+            "es": "Un dispositivo de tabla de NocoDB añadido a Gladys."
+          }
+        },
+        {
+          "key": "values",
+          "type": "string",
+          "required": true,
+          "label": {
+            "en": "Values",
+            "fr": "Valeurs",
+            "de": "Werte",
+            "es": "Valores"
+          },
+          "description": {
+            "en": "Field=value; Other=value, or JSON {\"Field\": \"value\"}. Scene variables allowed.",
+            "fr": "Champ=valeur; Autre=valeur, ou JSON {\"Champ\": \"valeur\"}. Variables de scène acceptées.",
+            "de": "Feld=Wert; Anderes=Wert, oder JSON {\"Feld\": \"Wert\"}. Szenenvariablen erlaubt.",
+            "es": "Campo=valor; Otro=valor, o JSON {\"Campo\": \"valor\"}. Se admiten variables de escena."
+          },
+          "placeholder": {
+            "en": "e.g. Title=Buy milk; Done=false",
+            "fr": "ex. Titre=Acheter du lait; Fait=non",
+            "de": "z. B. Titel=Milch kaufen; Erledigt=nein",
+            "es": "p. ej. Título=Comprar leche; Hecho=no"
+          }
         }
       ],
       "outputs": [
         {
-          "key": "signalled",
-          "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
+          "key": "id",
+          "type": "string",
+          "label": {
+            "en": "Id of the new row",
+            "fr": "Identifiant de la nouvelle ligne",
+            "de": "ID der neuen Zeile",
+            "es": "Identificador de la nueva fila"
+          }
+        }
+      ]
+    },
+    {
+      "key": "update_row",
+      "label": {
+        "en": "Update a NocoDB row",
+        "fr": "Modifier une ligne NocoDB",
+        "de": "NocoDB-Zeile ändern",
+        "es": "Modificar una fila de NocoDB"
+      },
+      "description": {
+        "en": "Changes fields of a row of a table followed, by its id.",
+        "fr": "Change des champs d'une ligne d'une table suivie, par son identifiant.",
+        "de": "Ändert Felder einer Zeile einer verfolgten Tabelle, über ihre ID.",
+        "es": "Cambia campos de una fila de una tabla seguida, por su identificador."
+      },
+      "timeout_seconds": 30,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "required": true,
+          "label": {
+            "en": "Table",
+            "fr": "Table",
+            "de": "Tabelle",
+            "es": "Tabla"
+          },
+          "description": {
+            "en": "A NocoDB table device added to Gladys.",
+            "fr": "Un appareil table NocoDB ajouté à Gladys.",
+            "de": "Ein in Gladys angelegtes NocoDB-Tabellengerät.",
+            "es": "Un dispositivo de tabla de NocoDB añadido a Gladys."
+          }
+        },
+        {
+          "key": "row_id",
+          "type": "string",
+          "required": true,
+          "label": {
+            "en": "Row id",
+            "fr": "Identifiant de la ligne",
+            "de": "Zeilen-ID",
+            "es": "Identificador de la fila"
+          },
+          "placeholder": {
+            "en": "e.g. 12",
+            "fr": "ex. 12",
+            "de": "z. B. 12",
+            "es": "p. ej. 12"
+          }
+        },
+        {
+          "key": "values",
+          "type": "string",
+          "required": true,
+          "label": {
+            "en": "Values",
+            "fr": "Valeurs",
+            "de": "Werte",
+            "es": "Valores"
+          },
+          "description": {
+            "en": "Field=value; Other=value, or JSON {\"Field\": \"value\"}. Scene variables allowed.",
+            "fr": "Champ=valeur; Autre=valeur, ou JSON {\"Champ\": \"valeur\"}. Variables de scène acceptées.",
+            "de": "Feld=Wert; Anderes=Wert, oder JSON {\"Feld\": \"Wert\"}. Szenenvariablen erlaubt.",
+            "es": "Campo=valor; Otro=valor, o JSON {\"Campo\": \"valor\"}. Se admiten variables de escena."
+          },
+          "placeholder": {
+            "en": "e.g. Title=Buy milk; Done=false",
+            "fr": "ex. Titre=Acheter du lait; Fait=non",
+            "de": "z. B. Titel=Milch kaufen; Erledigt=nein",
+            "es": "p. ej. Título=Comprar leche; Hecho=no"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "key": "id",
+          "type": "string",
+          "label": {
+            "en": "Row id",
+            "fr": "Identifiant de la ligne",
+            "de": "Zeilen-ID",
+            "es": "Identificador de la fila"
+          }
         }
       ]
     }
   ],
   "widgets": [
     {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
+      "key": "tables",
+      "label": {
+        "en": "NocoDB tables",
+        "fr": "Tables NocoDB",
+        "de": "NocoDB-Tabellen",
+        "es": "Tablas de NocoDB"
       },
-      "icon": "activity",
-      "action_timeout_seconds": 15
+      "description": {
+        "en": "The row count, or the field followed, of each table followed.",
+        "fr": "Le nombre de lignes, ou le champ suivi, de chaque table suivie.",
+        "de": "Die Zeilenzahl oder das verfolgte Feld jeder verfolgten Tabelle.",
+        "es": "El número de filas, o el campo seguido, de cada tabla seguida."
+      },
+      "icon": "database",
+      "action_timeout_seconds": 60,
+      "settings": [
+        {
+          "key": "tables",
+          "type": "multi_select",
+          "source": "devices",
+          "required": false,
+          "label": {
+            "en": "Tables (empty: all)",
+            "fr": "Tables (vide : toutes)",
+            "de": "Tabellen (leer: alle)",
+            "es": "Tablas (vacío: todas)"
+          },
+          "description": {
+            "en": "Only the devices added to Gladys can be chosen.",
+            "fr": "Seuls les appareils ajoutés à Gladys se choisissent.",
+            "de": "Nur die in Gladys angelegten Geräte sind wählbar.",
+            "es": "Solo se pueden elegir los dispositivos añadidos a Gladys."
+          }
+        },
+        {
+          "key": "show_refresh",
+          "type": "boolean",
+          "required": false,
+          "default": true,
+          "label": {
+            "en": "Show the Refresh button",
+            "fr": "Afficher le bouton Actualiser",
+            "de": "Schaltfläche „Aktualisieren“ anzeigen",
+            "es": "Mostrar el botón Actualizar"
+          }
+        }
+      ]
     }
   ]
 }

@@ -9,7 +9,8 @@ A Gladys Assistant **external integration**: a Node.js service (Node 22+, ESM,
 no build step) that runs in its own sandboxed Docker container and talks to
 Gladys through
 [`@gladysassistant/integration-sdk`](https://github.com/GladysAssistant/integration-sdk-js),
-its only runtime dependency. It started from the official JavaScript template.
+its only runtime dependency (NocoDB is reached with the `fetch` of Node). It
+started from the official JavaScript template.
 
 ## Commands
 
@@ -32,15 +33,19 @@ pushing.
 
 ```
 index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
-src/scenes.js                     scene action handlers (manifest `scene_actions`)
-src/widgets.js                    dashboard widget handlers (manifest `widgets`)
+src/app.js                        every SDK handler on the hub (the tests use the same wiring)
+src/hub.js                        NocoDbHub: timer, reads, new rows, threshold, states, config actions
+src/nocodb.js                     NocoDB REST v2 client: xc-token, deadline, error kinds
+src/devices.js                    discovery payload of a table followed, cell -> state
+src/scenes.js                     scene actions add_row, update_row (values parsed, columns checked)
+src/widgets.js                    dashboard widget `tables`
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
+src/store.js, src/logs.js         /data persistence (tables followed), one log line per failure and recovery
+src/texts.js                      every text sent to Gladys, in en/fr/de/es; ActionFailure
 gladys-assistant-integration.json manifest: name, config_schema, actions, image...
-docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
-test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
+docs/{en,fr,de,es}.md             user documentation, re-hosted by Gladys (mandatory)
+test/                             node --test, in-memory NocoDB (test/helpers) + the SDK's fake Gladys
+test/fixtures/real/               answers captured from a real NocoDB 2026.10.2
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -259,3 +264,26 @@ long, et sur un « Sie »/« Ihr… » de politesse en allemand. Le store exige 
 - Docs `en`, `fr`, `de`, `es` avec les mêmes sections.
 - Chauffe, ouverture, sécurité : ne rien rendre pilotable « comme un thermostat » ou par un assistant
   vocal quand une erreur serait dangereuse (leçon d'OctoPrint).
+
+## NocoDB (propre à cette intégration)
+
+- **API v2** (`/api/v2/...`, en-tête `xc-token`), testée contre NocoDB 2026.10.2 en Docker. `GET /api/v1/version`
+  répond sans jeton. Les identifiants : base `p…`, table `m…`, vue `vw…`.
+- **NocoDB ignore en silence un champ inconnu** dans un POST/PATCH (200, ligne créée sans lui) : les actions de scène
+  comparent les clés aux colonnes de la table (`GET /api/v2/meta/tables/{id}`, titre puis `column_name`) et refusent
+  par leur nom les inconnues et les calculées (système, `ID` auto-incrémenté, formules, liens…).
+- Un champ `Number` refuse un décimal (422 `ERR_INVALID_VALUE_FOR_FIELD`, `Decimal` l'accepte) ; une case à cocher
+  accepte `"true"`, `"yes"`, et revient en `0`/`1` à la lecture.
+- Erreurs : 401 `ERR_AUTHENTICATION_REQUIRED` (mauvais jeton), 404 `ERR_TABLE_NOT_FOUND`, `ERR_VIEW_NOT_FOUND`,
+  `ERR_RECORD_NOT_FOUND`. Une table ou une vue supprimée est le problème du suivi, pas du serveur.
+- `records/count?viewId=` applique les filtres de la vue ; `records?viewId=&where=(Id,gt,N)&sort=Id` combine filtres de
+  la vue et `where` (vérifié) : c'est ainsi que les nouvelles lignes d'une vue sont trouvées, sans webhook. Une ligne
+  ajoutée par nos actions est mémorisée pour ne pas déclencher « Nouvelle ligne » (pas de boucle) ; lectures et
+  écritures passent par `hub.exclusive`, une à la fois.
+- Une route inconnue (mauvais chemin, préfixe de proxy manquant) répond **404 sans code `error`**
+  (`{"msg":"Cannot GET …"}`) : c'est « pas NocoDB », pas une table supprimée. Un 5xx est une erreur du serveur. Les
+  redirections ne sont pas suivies : undici renverrait l'en-tête `xc-token` au nouvel hôte.
+- Un événement « Nouvelle ligne » refusé par Gladys (redémarrage, 429) n'avance pas `lastId` : il repart à la lecture
+  suivante. Le dernier compte lu est gardé à part (`lastCounts`) pour ne pas perdre un franchissement de seuil.
+- Une nouvelle base NocoDB contient une base d'exemple « Getting Started » : les noms de tables peuvent se répéter
+  d'une base à l'autre, d'où `Base / Table` ou l'identifiant.
