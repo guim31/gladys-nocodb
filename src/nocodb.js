@@ -137,7 +137,13 @@ export class NocoDbClient {
       const location = response.headers?.get?.('location');
       if (response.status < 300 || response.status >= 400 || !location || hops >= 2) break;
       const next = new URL(location, target);
-      if (next.hostname !== target.hostname || !['http:', 'https:'].includes(next.protocol)) {
+      // Never from https down to http: the token would travel in clear.
+      const downgrade = target.protocol === 'https:' && next.protocol !== 'https:';
+      if (
+        next.hostname !== target.hostname ||
+        downgrade ||
+        !['http:', 'https:'].includes(next.protocol)
+      ) {
         break;
       }
       target = next;
