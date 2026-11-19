@@ -33,6 +33,7 @@ import {
   ACTION_TEXT,
   ActionFailure,
   CONNECTION_TEXT,
+  FEATURE_TEXT,
   errorText,
   inEveryLanguage,
   join,
@@ -69,6 +70,27 @@ const same = (a, b) =>
   a.trim().toLowerCase() === b.trim().toLowerCase();
 const text = (value) => (typeof value === 'string' ? value.trim() : '');
 
+/**
+ * A row as JSON of MAX_EVENT_TEXT characters at most, and still valid JSON:
+ * the longest values are cut first.
+ */
+export function rowJson(row) {
+  const json = JSON.stringify(row);
+  if (json.length <= MAX_EVENT_TEXT) return json;
+  const short = {};
+  for (const [key, value] of Object.entries(row)) {
+    const text = typeof value === 'string' ? value : JSON.stringify(value);
+    short[key] = text && text.length > 80 ? `${text.slice(0, 79)}…` : value;
+  }
+  let result = JSON.stringify(short);
+  const keys = Object.keys(short);
+  while (result.length > MAX_EVENT_TEXT && keys.length > 0) {
+    delete short[keys.pop()];
+    result = JSON.stringify(short);
+  }
+  return result;
+}
+
 /** Whether the rows of a table have increasing numeric ids (new rows can be found). */
 function numericKey(column) {
   return Boolean(column && (column.ai || /int|serial|number|decimal/i.test(column.dt ?? '')));
@@ -96,6 +118,9 @@ export class NocoDbHub {
     this.follows = new Map();
     /** @type {Map<string, { count?: number, value?: any, error?: string, at: number }>} */
     this.readings = new Map();
+    /** @type {Map<string, number>} last count read per follow (threshold) */
+    this.lastCounts = new Map();
+    this.reading = false;
     /** @type {Map<string, Set<string>>} rows added by the scene actions, per table */
     this.ownRows = new Map();
     this.serverError = null;
@@ -140,9 +165,13 @@ export class NocoDbHub {
     if (this.client) {
       logger.info(`NocoDB at ${config.url}, ${this.follows.size} table(s) followed`);
     }
-    await this.rediscover();
-    await this.pollAll();
-    this.schedule();
+    try {
+      await this.rediscover();
+      await this.pollAll();
+    } finally {
+      // Whatever the first read gave, the timer reads again later.
+      this.schedule();
+    }
   }
 
   schedule() {
@@ -152,6 +181,9 @@ export class NocoDbHub {
       return;
     }
     this.timer = setInterval(() => {
+      // A read still running (a slow server, many tables): skip this tick
+      // rather than pile reads up in front of the scene actions.
+      if (this.reading) return;
       this.pollAll().catch((err) => this.failures.fail('loop', `Reading loop: ${err.message}`));
     }, this.config.pollIntervalMs);
     this.timer.unref?.();
@@ -217,7 +249,14 @@ export class NocoDbHub {
 
   /** Reads every table followed, publishes what changed. */
   pollAll() {
-    return this.exclusive(() => this.readAll());
+    this.reading = true;
+    const run = this.exclusive(() => this.readAll());
+    run
+      .finally(() => {
+        this.reading = false;
+      })
+      .catch(() => {});
+    return run;
   }
 
   async readAll() {
@@ -235,9 +274,9 @@ export class NocoDbHub {
       }
       this.setServerError(null);
     } catch (err) {
-      const error = asNocoDbError(err);
-      if (!SERVER_KINDS.has(error.kind)) throw err;
-      this.setServerError(error);
+      // A table's own failure never comes here (readFollow keeps it): what
+      // does, even unexpected, stops this read and shows in the status.
+      this.setServerError(asNocoDbError(err));
     }
     await this.publishStatus();
     await this.publishStates();
@@ -264,6 +303,9 @@ export class NocoDbHub {
    */
   async readFollow(spec) {
     const previous = this.readings.get(spec.id);
+    // The last count read, kept across a failed read and a reconfiguration:
+    // a threshold crossed meanwhile is not lost.
+    const before = this.lastCounts.get(spec.id);
     try {
       const count = await this.client.count(spec.tableId, { viewId: spec.viewId });
       let value = null;
@@ -274,13 +316,19 @@ export class NocoDbHub {
           fields: spec.field,
         });
         value = row ? cellState(spec.fieldKind, row[spec.field]) : null;
+        if (!row && spec.fieldKind === 'text') {
+          // The view is empty ("tasks to do": all done): say it, rather than
+          // keep showing the last title.
+          value = { text: (FEATURE_TEXT[this.config.language] ?? FEATURE_TEXT.en).empty };
+        }
       }
       await this.findNewRows(spec);
       this.readings.set(spec.id, { count, value, at: this.now() });
+      this.lastCounts.set(spec.id, count);
       if (this.failures.recover(`follow:${spec.id}`, `"${followName(spec)}" can be read again`)) {
         this.gladys.requestWidgetRefresh(WIDGET_KEY);
       }
-      await this.checkThreshold(spec, previous?.count, count);
+      await this.checkThreshold(spec, before, count);
       if (previous?.count !== count || JSON.stringify(previous?.value) !== JSON.stringify(value)) {
         this.gladys.requestWidgetRefresh(WIDGET_KEY);
       }
@@ -326,16 +374,20 @@ export class NocoDbHub {
     for (const row of rows) {
       const id = Number(row[spec.pk]);
       if (!Number.isFinite(id)) continue;
+      if (!own.has(String(id))) {
+        const title = spec.display ? row[spec.display] : null;
+        const sent = await this.event(TRIGGERS.NEW_ROW, {
+          device: externalId,
+          table: followName(spec),
+          id: String(id),
+          title:
+            title === null || title === undefined ? '' : String(title).slice(0, MAX_EVENT_TEXT),
+          row: rowJson(row),
+        });
+        // Refused by Gladys (restarting, 429): announced again at the next read.
+        if (!sent) break;
+      }
       spec.lastId = Math.max(spec.lastId, id);
-      if (own.has(String(id))) continue;
-      const title = spec.display ? row[spec.display] : null;
-      await this.event(TRIGGERS.NEW_ROW, {
-        device: externalId,
-        table: followName(spec),
-        id: String(id),
-        title: title === null || title === undefined ? '' : String(title).slice(0, MAX_EVENT_TEXT),
-        row: JSON.stringify(row).slice(0, MAX_EVENT_TEXT),
-      });
     }
     await this.save();
   }
@@ -358,8 +410,10 @@ export class NocoDbHub {
       await this.gladys.publishSceneEvent(key, data);
       logger.debug(`Scene event ${key} for ${data.table}`);
       this.failures.recover(`event:${key}`);
+      return true;
     } catch (err) {
       this.failures.fail(`event:${key}`, `Scene event ${key} refused by Gladys: ${err.message}`);
+      return false;
     }
   }
 
@@ -637,6 +691,7 @@ export class NocoDbHub {
     return this.exclusive(async () => {
       this.follows.delete(spec.id);
       this.readings.delete(spec.id);
+      this.lastCounts.delete(spec.id);
       this.failures.recover(`follow:${spec.id}`);
       await this.save();
       await this.rediscover();

@@ -73,7 +73,8 @@ Gladys hasta que lo elimine. Se pueden seguir 30 tablas como máximo.
 ## Dispositivos
 
 - **Filas**: el número de filas de la tabla o de la vista.
-- **El campo seguido**, si lo hay, con el nombre del campo.
+- **El campo seguido**, si lo hay, con el nombre del campo. Un campo de texto
+  muestra «Ninguna fila» cuando la vista está vacía.
 
 La integración lee NocoDB con su propio temporizador (Gladys no consulta estos
 dispositivos) y solo envía un valor cuando cambia.
@@ -128,7 +129,8 @@ tablas al instante, se puede ocultar.
 - Se anuncian como máximo 10 filas nuevas por tabla y por lectura; las
   siguientes en la lectura siguiente.
 - NocoDB Cloud limita la API a 5 solicitudes por segundo y usuario: las tablas
-  se leen una tras otra, muy por debajo.
+  se leen una tras otra, y se omite una lectura mientras la anterior sigue en
+  curso. Con muchas tablas, elija un intervalo más largo.
 - Solo la API v2 de NocoDB: las versiones muy antiguas (anteriores a 2024) no
   son compatibles.
 
@@ -139,6 +141,9 @@ tablas al instante, se puede ocultar.
 - **«No se puede contactar con NocoDB»**: compruebe la dirección desde la
   máquina donde se ejecuta Gladys (no `localhost`), y el puerto (8080 por
   defecto).
+- **«NocoDB ha respondido con un error de servidor (5xx)»**: NocoDB, o el
+  proxy delante de él, tiene un problema: consulte sus registros. La integración
+  vuelve a leer en el intervalo siguiente.
 - **«Esta dirección no responde como NocoDB»**: la dirección lleva a otro
   servidor web, o falta la ruta de un proxy inverso.
 - **Una tabla muestra «Error» en el widget**: fue eliminada, o su vista lo fue;

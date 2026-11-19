@@ -107,6 +107,12 @@ export const ERROR_TEXT = {
     de: 'Diese Adresse antwortet nicht wie NocoDB: Prüfe sie (Port, Pfad).',
     es: 'Esta dirección no responde como NocoDB: compruébela (puerto, ruta).',
   },
+  [ERROR_KINDS.SERVER_ERROR]: {
+    en: 'NocoDB answered with a server error (5xx): see its logs.',
+    fr: 'NocoDB a répondu par une erreur serveur (5xx) : voyez ses journaux.',
+    de: 'NocoDB hat mit einem Serverfehler (5xx) geantwortet: Sieh dir seine Protokolle an.',
+    es: 'NocoDB ha respondido con un error de servidor (5xx): consulte sus registros.',
+  },
   [ERROR_KINDS.OTHER]: {
     en: 'NocoDB answered with an error: see the logs of the integration.',
     fr: "NocoDB a répondu par une erreur : voyez les journaux de l'intégration.",
@@ -222,11 +228,12 @@ export const ACTION_TEXT = {
 };
 
 // Names of the devices and features (frozen at creation in Gladys).
+// `empty`: the text of a field followed when the view has no row.
 export const FEATURE_TEXT = {
-  en: { rows: 'Rows', value: (field) => field },
-  fr: { rows: 'Lignes', value: (field) => field },
-  de: { rows: 'Zeilen', value: (field) => field },
-  es: { rows: 'Filas', value: (field) => field },
+  en: { rows: 'Rows', value: (field) => field, empty: 'No row' },
+  fr: { rows: 'Lignes', value: (field) => field, empty: 'Aucune ligne' },
+  de: { rows: 'Zeilen', value: (field) => field, empty: 'Keine Zeile' },
+  es: { rows: 'Filas', value: (field) => field, empty: 'Ninguna fila' },
 };
 
 // Lines of the "Test the connection" report, and the answers of the

@@ -27,6 +27,8 @@ export function createFakeNocoDb() {
     down: false,
     slow: false,
     html: false,
+    status: 0,
+    wrongPath: false,
     requests: [],
     tables: new Map([
       [
@@ -83,6 +85,17 @@ export function createFakeNocoDb() {
     }
     if (state.slow) {
       throw new DOMException('The operation was aborted due to timeout', 'TimeoutError');
+    }
+    if (state.status) {
+      // A proxy in front of a NocoDB that is down (502), a crash (500), a redirection.
+      return new Response(state.status >= 500 ? 'Bad Gateway' : '', {
+        status: state.status,
+        headers: state.status < 400 ? { location: 'http://198.51.100.7/' } : {},
+      });
+    }
+    if (state.wrongPath) {
+      // What NocoDB answers to a route it does not know (captured).
+      return json(404, { msg: `Cannot ${method} ${url.pathname}` });
     }
     if (state.html) {
       return new Response('<html>Not NocoDB</html>', { status: 200 });

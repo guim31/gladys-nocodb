@@ -64,7 +64,8 @@ you delete it. Up to 30 tables can be followed.
 ## Devices
 
 - **Rows**: the number of rows of the table or of the view.
-- **The field followed**, if any, named after the field.
+- **The field followed**, if any, named after the field. A text field shows
+  "No row" when the view is empty.
 
 The integration reads NocoDB on its own timer (Gladys does not poll these
 devices), and only sends a value when it changes.
@@ -116,7 +117,8 @@ can be hidden.
 - At most 10 new rows per table are announced per reading; the next ones come
   at the next reading.
 - NocoDB Cloud limits the API to 5 requests per second per user: the tables
-  are read one after the other, well below.
+  are read one after the other, and a read is skipped while the previous one
+  runs. With many tables, choose a longer interval.
 - NocoDB API v2 only: very old releases (before 2024) are not supported.
 
 ## Troubleshooting
@@ -125,6 +127,9 @@ can be hidden.
   access to the base. Create a new one.
 - **"NocoDB cannot be reached"**: check the address from the machine running
   Gladys (not `localhost`), and the port (8080 by default).
+- **"NocoDB answered with a server error (5xx)"**: NocoDB, or the proxy in
+  front of it, has a problem: see its logs. The integration reads again at the
+  next interval.
 - **"This address does not answer like NocoDB"**: the address leads to another
   web server, or lacks the path of a reverse proxy.
 - **A table shows "Error" in the widget**: it was deleted, or its view was

@@ -23,6 +23,7 @@ export const ERROR_KINDS = Object.freeze({
   UNREACHABLE: 'unreachable',
   TIMEOUT: 'timeout',
   NOT_NOCODB: 'not_nocodb',
+  SERVER_ERROR: 'server_error',
   OTHER: 'other',
 });
 
@@ -33,6 +34,7 @@ export const SERVER_KINDS = new Set([
   ERROR_KINDS.UNREACHABLE,
   ERROR_KINDS.TIMEOUT,
   ERROR_KINDS.NOT_NOCODB,
+  ERROR_KINDS.SERVER_ERROR,
 ]);
 
 export const REQUEST_TIMEOUT_MS = 10_000;
@@ -70,6 +72,9 @@ function kindOfStatus(status) {
   if (status === 404) return ERROR_KINDS.NOT_FOUND;
   if (status === 400 || status === 422) return ERROR_KINDS.INVALID;
   if (status === 429) return ERROR_KINDS.RATE_LIMITED;
+  if (status >= 500) return ERROR_KINDS.SERVER_ERROR;
+  // A redirection is not followed: the token would go to another host.
+  if (status >= 300 && status < 400) return ERROR_KINDS.NOT_NOCODB;
   return ERROR_KINDS.OTHER;
 }
 
@@ -119,7 +124,9 @@ export class NocoDbClient {
         headers,
         body: body === undefined ? undefined : JSON.stringify(body),
         signal: AbortSignal.timeout(this.timeoutMs),
-        redirect: 'follow',
+        // Never follow a redirection: undici would send the xc-token header to the
+        // new host too.
+        redirect: 'manual',
       });
     } catch (err) {
       throw asNocoDbError(err);
@@ -140,6 +147,13 @@ export class NocoDbClient {
           status: response.status,
         });
       }
+    }
+    // NocoDB answers an unknown route with a 404 without its error code
+    // ({"msg": "Cannot GET /..."}): a wrong path, not a missing table.
+    if (response.status === 404 && typeof data?.error !== 'string') {
+      throw new NocoDbError(ERROR_KINDS.NOT_NOCODB, 'Unknown NocoDB route (wrong path?)', {
+        status: 404,
+      });
     }
     if (!response.ok) {
       const detail = typeof data?.msg === 'string' ? data.msg : data?.message;

@@ -280,5 +280,10 @@ long, et sur un « Sie »/« Ihr… » de politesse en allemand. Le store exige 
   la vue et `where` (vérifié) : c'est ainsi que les nouvelles lignes d'une vue sont trouvées, sans webhook. Une ligne
   ajoutée par nos actions est mémorisée pour ne pas déclencher « Nouvelle ligne » (pas de boucle) ; lectures et
   écritures passent par `hub.exclusive`, une à la fois.
+- Une route inconnue (mauvais chemin, préfixe de proxy manquant) répond **404 sans code `error`**
+  (`{"msg":"Cannot GET …"}`) : c'est « pas NocoDB », pas une table supprimée. Un 5xx est une erreur du serveur. Les
+  redirections ne sont pas suivies : undici renverrait l'en-tête `xc-token` au nouvel hôte.
+- Un événement « Nouvelle ligne » refusé par Gladys (redémarrage, 429) n'avance pas `lastId` : il repart à la lecture
+  suivante. Le dernier compte lu est gardé à part (`lastCounts`) pour ne pas perdre un franchissement de seuil.
 - Une nouvelle base NocoDB contient une base d'exemple « Getting Started » : les noms de tables peuvent se répéter
   d'une base à l'autre, d'où `Base / Table` ou l'identifiant.

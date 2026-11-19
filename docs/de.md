@@ -74,7 +74,8 @@ können verfolgt werden.
 ## Geräte
 
 - **Zeilen**: die Zeilenzahl der Tabelle oder der Ansicht.
-- **Das verfolgte Feld**, falls vorhanden, nach dem Feld benannt.
+- **Das verfolgte Feld**, falls vorhanden, nach dem Feld benannt. Ein Textfeld
+  zeigt „Keine Zeile“, wenn die Ansicht leer ist.
 
 Die Integration liest NocoDB mit einem eigenen Timer (Gladys fragt diese Geräte
 nicht ab) und sendet einen Wert nur, wenn er sich ändert.
@@ -130,7 +131,8 @@ alle Tabellen sofort liest, lässt sich ausblenden.
 - Höchstens 10 neue Zeilen pro Tabelle werden pro Lesevorgang gemeldet; die
   weiteren beim nächsten.
 - NocoDB Cloud begrenzt die API auf 5 Anfragen pro Sekunde und Benutzer: Die
-  Tabellen werden nacheinander gelesen, weit darunter.
+  Tabellen werden nacheinander gelesen, und ein Lesevorgang wird übersprungen,
+  solange der vorige läuft. Bei vielen Tabellen wähle ein längeres Intervall.
 - Nur die API v2 von NocoDB: sehr alte Versionen (vor 2024) werden nicht
   unterstützt.
 
@@ -140,6 +142,9 @@ alle Tabellen sofort liest, lässt sich ausblenden.
   Benutzer hat den Zugriff auf die Base verloren. Erstelle ein neues.
 - **„NocoDB ist nicht erreichbar“**: Prüfe die Adresse von dem Rechner aus, auf
   dem Gladys läuft (nicht `localhost`), und den Port (standardmäßig 8080).
+- **„NocoDB hat mit einem Serverfehler (5xx) geantwortet“**: NocoDB oder der
+  Proxy davor hat ein Problem: Sieh dir seine Protokolle an. Die Integration
+  liest beim nächsten Intervall erneut.
 - **„Diese Adresse antwortet nicht wie NocoDB“**: Die Adresse führt zu einem
   anderen Webserver, oder der Pfad eines Reverse-Proxys fehlt.
 - **Eine Tabelle zeigt „Fehler“ im Widget**: Die Tabelle wurde gelöscht, oder ihre

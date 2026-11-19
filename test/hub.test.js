@@ -9,7 +9,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { normalizeConfig, parseUrl } from '../src/config.js';
 import { tableIds } from '../src/devices.js';
-import { TRIGGERS, followId } from '../src/hub.js';
+import { MAX_EVENT_TEXT, TRIGGERS, followId, rowJson } from '../src/hub.js';
 import { TABLE, URL_BASE, VIEW_TODO } from './helpers/fakeNocoDb.js';
 import {
   BASE_CONFIG,
@@ -295,4 +295,90 @@ test('the URL and the token never reach the discovery payloads', async (t) => {
   const payload = JSON.stringify(w.fake.discoveredDevices);
   assert.ok(!payload.includes(URL_BASE));
   assert.ok(!payload.includes(BASE_CONFIG.api_token));
+});
+
+test('a 5xx at start: disconnected with the reason, and the timer still reads later', async (t) => {
+  t.mock.timers.enable({ apis: ['setInterval'] });
+  const store = new MemoryStore();
+  const w = await world(t, { store, timers: true });
+  w.noco.state.status = 502;
+  await w.fake.configUpdated({ ...BASE_CONFIG, poll_interval: '30' });
+  assert.equal(w.fake.connectionStatus.connected, false);
+  assert.match(w.fake.connectionStatus.message.fr, /erreur serveur \(5xx\)/);
+  w.noco.state.status = 0;
+  t.mock.timers.tick(30_000);
+  await new Promise((resolve) => setImmediate(resolve));
+  await w.hub.queue;
+  assert.deepEqual(w.fake.connectionStatus, { connected: true });
+});
+
+test('a wrong path or a redirection is not a missing table', async (t) => {
+  const w = await world(t);
+  await follow(w, { table: 'Tasks' });
+  w.noco.state.wrongPath = true;
+  await w.hub.pollAll();
+  assert.match(w.fake.connectionStatus.message.fr, /ne répond pas comme NocoDB/);
+  const ack = await w.fake.action('test_connection', {});
+  assert.equal(ack.success, false);
+  assert.match(ack.error.fr, /ne répond pas comme NocoDB/);
+  w.noco.state.wrongPath = false;
+  w.noco.state.status = 301;
+  await w.hub.pollAll();
+  assert.match(w.fake.connectionStatus.message.fr, /ne répond pas comme NocoDB/);
+});
+
+test('a threshold crossed across a failed read still fires', async (t) => {
+  const w = await world(t);
+  await follow(w, { table: 'Tasks', threshold: '3' });
+  w.noco.state.status = 500;
+  await w.hub.pollAll();
+  w.noco.state.status = 0;
+  w.noco.addRow({ Title: 'Four' });
+  await w.hub.pollAll();
+  assert.deepEqual(
+    w.fake.sceneEvents
+      .filter((event) => event.key === TRIGGERS.COUNT_ABOVE)
+      .map((e) => e.data.count),
+    [4],
+  );
+});
+
+test('an empty view says so on the field followed, instead of the last title', async (t) => {
+  const w = await world(t);
+  await follow(w, { table: 'Tasks', view: 'Todo', field: 'Title' });
+  await createDevices(w);
+  const feature = tableIds(w.gladys, followId(TABLE, VIEW_TODO, 'Title')).feature('value_text');
+  assert.equal(w.fake.lastState(feature), 'Fix door');
+  for (const row of w.noco.state.tables.get(TABLE).rows) row.Done = 1;
+  await w.hub.pollAll();
+  assert.equal(w.fake.lastState(feature), 'Aucune ligne');
+});
+
+test('a "New NocoDB row" refused by Gladys is announced again at the next read', async (t) => {
+  const w = await world(t);
+  await follow(w, { table: 'Tasks' });
+  w.noco.addRow({ Title: 'One' });
+  w.noco.addRow({ Title: 'Two' });
+  const original = w.gladys.publishSceneEvent.bind(w.gladys);
+  t.mock.method(w.gladys, 'publishSceneEvent', async () => {
+    throw new Error('429 TOO_MANY_REQUESTS');
+  });
+  await w.hub.pollAll();
+  w.gladys.publishSceneEvent.mock.restore();
+  assert.equal(typeof original, 'function');
+  await w.hub.pollAll();
+  assert.deepEqual(
+    w.fake.sceneEvents.map((event) => event.data.title),
+    ['One', 'Two'],
+  );
+});
+
+test('the row variable stays valid JSON when the row is long', () => {
+  const row = { Id: 1, Title: 'x'.repeat(5000), Notes: 'y'.repeat(3000), Done: 1 };
+  const json = rowJson(row);
+  assert.ok(json.length <= MAX_EVENT_TEXT);
+  const parsed = JSON.parse(json);
+  assert.equal(parsed.Id, 1);
+  assert.equal(parsed.Done, 1);
+  assert.ok(parsed.Title.length <= 80);
 });

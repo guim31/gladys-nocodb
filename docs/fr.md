@@ -74,7 +74,8 @@ jusqu'à sa suppression. 30 tables au plus peuvent être suivies.
 ## Appareils
 
 - **Lignes** : le nombre de lignes de la table ou de la vue.
-- **Le champ suivi**, s'il y en a un, au nom du champ.
+- **Le champ suivi**, s'il y en a un, au nom du champ. Un champ texte affiche
+  « Aucune ligne » quand la vue est vide.
 
 L'intégration lit NocoDB avec son propre minuteur (Gladys n'interroge pas ces
 appareils) et n'envoie une valeur que lorsqu'elle change.
@@ -132,7 +133,8 @@ tables aussitôt, peut être masqué.
 - 10 nouvelles lignes au plus par table sont annoncées par lecture ; les
   suivantes à la lecture d'après.
 - NocoDB Cloud limite l'API à 5 requêtes par seconde et par utilisateur : les
-  tables sont lues l'une après l'autre, bien en dessous.
+  tables sont lues l'une après l'autre, et une lecture est sautée tant que la
+  précédente tourne. Avec beaucoup de tables, choisissez un intervalle plus long.
 - API v2 de NocoDB seulement : les très anciennes versions (avant 2024) ne sont
   pas prises en charge.
 
@@ -142,6 +144,9 @@ tables aussitôt, peut être masqué.
   utilisateur a perdu l'accès à la base. Créez-en un nouveau.
 - **« NocoDB est injoignable »** : vérifiez l'adresse depuis la machine qui fait
   tourner Gladys (pas `localhost`), et le port (8080 par défaut).
+- **« NocoDB a répondu par une erreur serveur (5xx) »** : NocoDB, ou le proxy
+  devant lui, a un problème : voyez ses journaux. L'intégration relit à
+  l'intervalle suivant.
 - **« Cette adresse ne répond pas comme NocoDB »** : l'adresse mène à un autre
   serveur web, ou il manque le chemin d'un proxy inverse.
 - **Une table affiche « Erreur » dans le widget** : elle a été supprimée, ou sa

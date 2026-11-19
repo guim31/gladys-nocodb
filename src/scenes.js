@@ -168,7 +168,7 @@ export const SCENE_ACTIONS = {
       }
       const pk = table.columns.find((entry) => entry.pk)?.title;
       const id = pk && answer?.[pk] !== undefined ? String(answer[pk]) : '';
-      logger.info(`Scene: row ${id} added to "${followName(spec)}"`);
+      logger.debug(`Scene: row ${id} added to "${followName(spec)}"`);
       await hub.afterWrite(spec.tableId, id || null);
       return { id };
     });
@@ -191,7 +191,7 @@ export const SCENE_ACTIONS = {
       } catch (err) {
         throw writeFailure(err);
       }
-      logger.info(`Scene: row ${id} of "${followName(spec)}" updated`);
+      logger.debug(`Scene: row ${id} of "${followName(spec)}" updated`);
       await hub.afterWrite(spec.tableId, null);
       return { id: String(id) };
     });
