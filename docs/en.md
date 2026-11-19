@@ -1,61 +1,132 @@
-# Demo Devices Template
+# NocoDB
 
-This is the user documentation of the integration. Gladys re-hosts this file
-and shows a permanent **Documentation** link to it in the Configuration screen
-(in the user's language, with English as the fallback) — it is when
-configuring that the user needs it most. Keep the short onboarding hints in
-the `section` blocks of the manifest `config_schema`; put the long
-step-by-step (screenshots, troubleshooting…) here.
+Your NocoDB tables in Gladys: how many rows a table or a view holds, a field of
+its first row, a scene trigger when a row is added, and rows added or updated
+from your scenes. NocoDB is a self-hosted, open source alternative to Airtable.
+
+Tested against a real NocoDB 2026.10.2 (Docker, SQLite): table and view
+followed, rows added and updated by the scene actions, new rows detected, wrong
+token, table deleted, server stopped. Feedback and bug reports are welcome on
+[GitHub](https://github.com/guim31/gladys-nocodb/issues).
 
 ## What you get
 
-Six demo devices show up after installation: a weather station (real data
-from Open-Meteo), a switch, a dimmable light, a smart plug with power
-metering, a motion sensor and a camera.
+- **One device per table you follow**: its number of rows, or the number of
+  rows of one of its views (its filters: "tasks not done", "open tickets"…).
+- Optionally, **a field of the first row of the view** (its sort: "next task",
+  "latest reading"), as a number, a yes/no or a text.
+- Two **scene triggers**: "New NocoDB row" and "NocoDB rows above a threshold".
+- Two **scene actions**: "Add a NocoDB row" and "Update a NocoDB row".
+- A **dashboard widget**, "NocoDB tables", with every table followed.
+
+## Requirements
+
+- NocoDB (a 2024 release or later, API v2) reachable from Gladys over the
+  network: not `localhost`, the integration runs in its own container. NocoDB
+  Cloud (`https://app.nocodb.com`) works too.
+- An **API token**: in NocoDB, Account settings → Tokens → Create a token. The
+  token has the rights of its user: a user with the "Viewer" role on a base
+  cannot write in it (the scene actions then fail with the reason).
 
 ## Configuration
 
-1. Open the **Configuration** tab of the integration.
-2. Set the **latitude** and **longitude** the demo weather station should
-   observe (they default to Paris), and pick your temperature unit.
-   The **refresh interval** sets how often the weather station and the
-   plug's power are read: every 5 minutes by default, every minute at most.
-3. Save: the devices appear in the **Discovery** tab, ready to be added.
+- **Address**: the address of NocoDB as seen from Gladys, with its port, e.g.
+  `http://192.168.1.20:8080`. A path is kept (`https://example.org/nocodb`).
+- **API token**: the token created above. It is never written in the logs.
+- **Refresh interval**: 30 seconds to 15 minutes (1 minute by default). Each
+  table is read with two or three requests per interval.
+- **Language of the messages**: the names of the new features and the messages
+  of the scene actions.
 
-The **Prefer the local connection** toggle drives the demo plug: it reports
-the channel it actually uses as a badge (local or cloud), with an orange dot
-when it runs degraded (local refused, cloud fallback).
+"Test the connection" lists the tables the token sees ("Base / Table"), reads
+the tables followed and says what is wrong.
 
-## Actions
+## Following tables
 
-- **Test the weather provider** — performs a live request to Open-Meteo and
-  shows the current temperature and humidity under the button.
-- **Identify a device** — pick one of your devices in the list and it will
-  signal itself (the demo light "blinks" in the logs).
+Use "Follow a table" in the configuration of the integration:
+
+- **Table**: its name, `Base / Table` if several bases have a table of that
+  name, or its id (in NocoDB: the table's menu → Copy table id).
+- **View** (optional): the rows counted are those of the view, with its
+  filters. Without a view, every row of the table is counted.
+- **Field** (optional): also shows this field of the first row of the view.
+  Number, decimal, currency, percent, rating, duration, rollup and count
+  fields give a number; a checkbox gives yes/no; any other field a text.
+- **Threshold** (optional): a number of rows for the trigger "NocoDB rows
+  above a threshold".
+- **Name** (optional): the name of the device.
+
+Then add the device from the Discover tab of the integration. The same table,
+view and field again change the name or the threshold. "Stop following a
+table" takes the same table, view and field; its device stays in Gladys until
+you delete it. Up to 30 tables can be followed.
+
+## Devices
+
+- **Rows**: the number of rows of the table or of the view.
+- **The field followed**, if any, named after the field.
+
+The integration reads NocoDB on its own timer (Gladys does not poll these
+devices), and only sends a value when it changes.
 
 ## Scenes
 
-The integration adds its own cards to the scene editor (Gladys 5.1 or
-later), under the **Integrations** category:
+### Triggers
 
-- **Motion detected** (trigger) — starts the scene when a demo motion sensor
-  sees something move. Optionally pick the sensor and what moved (person,
-  animal); left empty, any detection matches. The following actions can
-  read what moved with `{{triggerEvent.data.target}}`.
-- **Identify a device** (action) — makes the chosen device signal itself.
-  It returns whether the device could signal itself, so the following
-  actions can depend on it.
+- **New NocoDB row**: a row added to a table followed (to its view, if one was
+  chosen: a row that does not match its filters is not new for it). Variables:
+  the table, the id of the row, its display value, and the whole row in JSON.
+  Rows added by this integration's scene actions do not fire it (no loop). The
+  rows present when the table is followed are not new. Needs a table with a
+  numeric id, which every table created in NocoDB has.
+- **NocoDB rows above a threshold**: the number of rows goes above the
+  threshold set with "Follow a table". It fires once per crossing: the count
+  must go back to the threshold or below before it fires again. Variables: the
+  table, the number of rows, the threshold.
+
+The table filter of both triggers is optional: empty, any table.
+
+### Actions
+
+- **Add a NocoDB row**: adds a row to a table followed. Its id is an output
+  for the next actions.
+- **Update a NocoDB row**: changes fields of a row of a table followed, by its
+  id (e.g. the id variable of "New NocoDB row").
+
+The values are written `Field=value; Other=value` (separated by `;` or new
+lines), or in JSON: `{"Field": "value", "Amount": 3}`. Scene variables can be
+used in both. A checkbox accepts `true`/`false`, `yes`/`no`, `1`/`0`; a number
+accepts a comma. A field the table does not have, or that NocoDB fills itself
+(id, created time, formula…), is refused with its name: NocoDB would drop it
+silently. A value NocoDB refuses (a text in a number field) fails with its
+message.
 
 ## Dashboard
 
-Add the **Demo status** widget to a dashboard: it shows the live
-temperature of the weather station and the power of the office plug, the
-connection the plug currently uses (orange when degraded) and the observed
-location. Its **Identify the light** button makes the demo light signal
-itself.
+The "NocoDB tables" widget shows a line per table followed: its number of
+rows, or the field followed. The tables shown can be chosen (only the devices
+added to Gladys), and its "Refresh" button, which reads every table at once,
+can be hidden.
+
+## Limits
+
+- Only the tables you follow are read, never a whole base.
+- A new row is a row whose id is above the last one seen: a table of an
+  external database whose key is a text does not fire "New NocoDB row".
+- At most 10 new rows per table are announced per reading; the next ones come
+  at the next reading.
+- NocoDB Cloud limits the API to 5 requests per second per user: the tables
+  are read one after the other, well below.
+- NocoDB API v2 only: very old releases (before 2024) are not supported.
 
 ## Troubleshooting
 
-The integration logs everything it does: check the integration logs from the
-Gladys UI (or `docker logs` on the host) with `LOG_LEVEL=debug` for the full
-detail.
+- **"NocoDB refuses the API token"**: the token was revoked, or its user lost
+  access to the base. Create a new one.
+- **"NocoDB cannot be reached"**: check the address from the machine running
+  Gladys (not `localhost`), and the port (8080 by default).
+- **"This address does not answer like NocoDB"**: the address leads to another
+  web server, or lacks the path of a reverse proxy.
+- **A table shows "Error" in the widget**: it was deleted, or its view was
+  deleted; "Test the connection" names it. Follow it again.
+- Detailed logs: set `LOG_LEVEL=debug` on the container.

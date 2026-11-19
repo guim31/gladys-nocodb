@@ -7,10 +7,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { DEVICE_BLUEPRINTS, SCENE_TRIGGER_KEYS } from '../src/devices/index.js';
+import { DEFAULT_CONFIG, POLL_INTERVALS } from '../src/config.js';
+import { TRIGGERS } from '../src/hub.js';
 import { SCENE_ACTIONS } from '../src/scenes.js';
 import { WIDGETS } from '../src/widgets.js';
-import { DEFAULT_CONFIG } from '../src/config.js';
+import { BASE_CONFIG, createWorld } from './helpers/world.js';
+
+const SCENE_TRIGGER_KEYS = Object.values(TRIGGERS);
 
 const manifest = JSON.parse(
   await readFile(new URL('../gladys-assistant-integration.json', import.meta.url), 'utf8'),
@@ -28,9 +31,6 @@ const allFields = [
   ].flatMap((item) => item.fields ?? []),
   ...(manifest.widgets ?? []).flatMap((widget) => widget.settings ?? []),
 ];
-
-// Actions registered outside the blueprints (see index.js).
-const REGISTRY_LEVEL_ACTIONS = ['identify'];
 
 // Manifest fields older Gladys releases reject as unknown, with the first
 // release accepting them. The store validator refuses a manifest whose
@@ -57,14 +57,42 @@ function isAtLeast(version, required) {
   return true;
 }
 
-test('every manifest action has a registered handler', () => {
-  const handled = new Set([
-    ...DEVICE_BLUEPRINTS.flatMap((bp) => Object.keys(bp.actions ?? {})),
-    ...REGISTRY_LEVEL_ACTIONS,
-  ]);
-  for (const action of manifest.actions ?? []) {
-    assert.ok(handled.has(action.key), `manifest action "${action.key}" has no handler`);
+test('identity: name, image, cover, local transport, categories', () => {
+  assert.equal(manifest.name, 'NocoDB');
+  assert.equal(manifest.docker_image, `ghcr.io/guim31/gladys-nocodb:${manifest.version}`);
+  assert.equal(
+    manifest.cover_image,
+    'https://raw.githubusercontent.com/guim31/gladys-nocodb/main/cover.png',
+  );
+  assert.deepEqual(manifest.transports, ['local']);
+  assert.deepEqual(manifest.categories, ['services', 'servers']);
+});
+
+test('every manifest action has a handler (it answers, never "no handler")', async (t) => {
+  const world = await createWorld({ config: { ...BASE_CONFIG, url: '' } });
+  t.after(() => world.app.stop());
+  for (const action of manifest.actions) {
+    const ack = await world.fake.action(action.key, {});
+    assert.ok(ack.error?.fr, `action "${action.key}": ${JSON.stringify(ack)}`);
+    assert.doesNotMatch(JSON.stringify(ack), /no handler/i);
   }
+});
+
+test('actions declare no secret field, no required field (no default is applied)', () => {
+  for (const action of manifest.actions) {
+    for (const field of action.fields ?? []) {
+      assert.notEqual(field.type, 'secret', `${action.key}.${field.key}`);
+      assert.notEqual(field.required, true, `${action.key}.${field.key}`);
+    }
+  }
+});
+
+test('the refresh intervals of the manifest are the ones of the code', () => {
+  const field = manifest.config_schema.find((entry) => entry.key === 'poll_interval');
+  assert.deepEqual(
+    field.options.map((option) => option.value),
+    POLL_INTERVALS,
+  );
 });
 
 test('declaring catalog categories requires Gladys >= 4.86.0', () => {
@@ -82,7 +110,7 @@ test('declaring catalog categories requires Gladys >= 4.86.0', () => {
 
 test('declaring scene triggers, scene actions or widgets requires Gladys >= 5.1.0', () => {
   const declared = CAPABILITY_FIELDS.filter((field) => manifest[field] !== undefined);
-  assert.ok(declared.length > 0, 'the template demonstrates the capability fields');
+  assert.ok(declared.length === 3);
   assert.ok(
     isAtLeast(minGladysVersion(), CAPABILITY_MIN_GLADYS_VERSION),
     `${declared.join(', ')} requires gladys_version >= 5.1.0, got "${manifest.gladys_version}"`,
